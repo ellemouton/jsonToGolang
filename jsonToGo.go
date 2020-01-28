@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -59,11 +60,18 @@ func main() {
 	body, err := readFile(fPath)
 	if err != nil {
 		fmt.Println("Error:", err)
+		os.Exit(1)
 	}
 
-	fmt.Println(body)
+	finalStruct, err := extractStruct(body)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
 
-	// produce go struct. Ask user if they want it saved to a go file
+	fmt.Println(finalStruct)
+
+	// Ask user if they want it saved to a go file
 }
 
 func readFile(fPath string) (string, error) {
@@ -107,4 +115,12 @@ func strip(b []byte) ([]byte, error) {
 	}
 
 	return b1, nil
+}
+
+func extractStruct(s string) (string, error) {
+	//TODO
+	var result map[string]interface{}
+	json.Unmarshal([]byte(s), &result)
+	fmt.Println(result)
+	return s, nil
 }

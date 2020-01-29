@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -16,6 +17,88 @@ const (
 	star    byte = 42
 	newline byte = 10
 )
+
+func readFile(fPath string) (string, error) {
+	f, err := os.Open(fPath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	b, err := ioutil.ReadAll(f)
+	if err != nil {
+		return "", err
+	}
+
+	b, err = strip(b)
+	if err != nil {
+		return "", err
+	}
+
+	return string(b), nil
+}
+
+func strip(b []byte) ([]byte, error) {
+	//TODO -> remove multiline comments
+	singleLineComment := false
+	var b1 []byte
+
+	for i := 0; i < len(b); i++ {
+		if (b[i] == slash) && (i+1 < len(b)) {
+			if b[i+1] == slash {
+				singleLineComment = true
+				i++
+			}
+		} else if b[i] == newline {
+			singleLineComment = false
+		} else if b[i] == space {
+			continue
+		} else if !singleLineComment {
+			b1 = append(b1, b[i])
+		}
+	}
+
+	return b1, nil
+}
+
+func capFirst(s string) string {
+	return strings.ToUpper(string(s[0])) + s[1:]
+}
+
+func rec(name string, m map[string]interface{}, d int) (string, error) {
+	var prefix string
+	if name == "" {
+		prefix = `type NameHere struct `
+	} else {
+		prefix = capFirst(name) + `struct `
+	}
+
+	return prefix, nil
+}
+
+func extractStruct(s string) (string, error) {
+	//TODO
+	var res map[string]interface{}
+
+	err := json.Unmarshal([]byte(s), &res)
+	if err != nil {
+		fmt.Println("Something wrong with your JSON")
+		return "", err
+	}
+
+	recRet, err := rec("", res, 0)
+	if err != nil {
+		return "", err
+	}
+
+	//for key := range res {
+	//	fmt.Printf("%T", res[key])
+	//}
+
+	fmt.Println(recRet)
+
+	return s, nil
+}
 
 func main() {
 	fPath, err := filepath.Abs(".")
@@ -72,55 +155,4 @@ func main() {
 	fmt.Println(finalStruct)
 
 	// Ask user if they want it saved to a go file
-}
-
-func readFile(fPath string) (string, error) {
-	f, err := os.Open(fPath)
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
-
-	b, err := ioutil.ReadAll(f)
-	if err != nil {
-		return "", err
-	}
-
-	b, err = strip(b)
-	if err != nil {
-		return "", err
-	}
-
-	return string(b), nil
-}
-
-func strip(b []byte) ([]byte, error) {
-	//TODO -> remove multiline comments
-	singleLineComment := false
-	var b1 []byte
-
-	for i := 0; i < len(b); i++ {
-		if (b[i] == slash) && (i+1 < len(b)) {
-			if b[i+1] == slash {
-				singleLineComment = true
-				i++
-			}
-		} else if b[i] == newline {
-			singleLineComment = false
-		} else if b[i] == space {
-			continue
-		} else if !singleLineComment {
-			b1 = append(b1, b[i])
-		}
-	}
-
-	return b1, nil
-}
-
-func extractStruct(s string) (string, error) {
-	//TODO
-	var result map[string]interface{}
-	json.Unmarshal([]byte(s), &result)
-	fmt.Println(result)
-	return s, nil
 }

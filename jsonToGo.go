@@ -73,6 +73,15 @@ func rec(name string, m map[string]interface{}, d int) (string, error) {
 		prefix = capFirst(name) + `struct `
 	}
 
+	for key := range m {
+		switch m[key].(type) {
+		case map[string]interface{}:
+			fmt.Println("map ->", key)
+		default:
+			fmt.Println("normal field:", key)
+		}
+	}
+
 	return prefix, nil
 }
 
@@ -90,10 +99,6 @@ func extractStruct(s string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	//for key := range res {
-	//	fmt.Printf("%T", res[key])
-	//}
 
 	fmt.Println(recRet)
 

@@ -39,7 +39,7 @@ func readFile(fPath string) (string, error) {
 }
 
 func strip(b []byte) ([]byte, error) {
-	//TODO -> remove multiline comments
+	//TODO -> remove multiline comments and remove `[]` at start and end
 	singleLineComment := false
 	var b1 []byte
 
@@ -66,27 +66,43 @@ func capFirst(s string) string {
 }
 
 func rec(name string, m map[string]interface{}, d int) (string, error) {
-	var prefix string
-	if name == "" {
-		prefix = `type NameHere struct `
-	} else {
-		prefix = capFirst(name) + `struct `
+	var indent string
+	for i := 0; i < d; i++ {
+		indent += "\t"
 	}
+
+	prefix := indent
+	if name == "" {
+		prefix += "type NameHere struct {\n"
+	} else {
+		prefix += capFirst(name) + " struct {\n"
+	}
+
+	var body string
+	bodyIndent := indent + "\t"
 
 	for key := range m {
 		switch m[key].(type) {
 		case map[string]interface{}:
-			fmt.Println("map ->", key)
+			recRes, err := rec(key, m[key].(map[string]interface{}), d+1)
+			if err != nil {
+				return "", nil
+			}
+			body += recRes
 		default:
-			fmt.Println("normal field:", key)
+			body += fmt.Sprintf("%s%s %T `json:\"%s\"`\n", bodyIndent, capFirst(key), m[key], key)
 		}
 	}
 
-	return prefix, nil
+	suffix := indent + "}"
+	if d != 0 {
+		suffix += fmt.Sprintf(" `json:\"%s\"`\n", name)
+	}
+
+	return prefix + body + suffix, nil
 }
 
 func extractStruct(s string) (string, error) {
-	//TODO
 	var res map[string]interface{}
 
 	err := json.Unmarshal([]byte(s), &res)
@@ -100,9 +116,7 @@ func extractStruct(s string) (string, error) {
 		return "", err
 	}
 
-	fmt.Println(recRet)
-
-	return s, nil
+	return recRet, nil
 }
 
 func main() {

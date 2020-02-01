@@ -119,6 +119,19 @@ func extractStruct(s string) (string, error) {
 	return recRet, nil
 }
 
+func fileSetup(fPath string) {
+	f, err := os.Create(fPath)
+	if err != nil {
+		fmt.Println("Error:", err)
+		os.Exit(1)
+	}
+	_, err = f.WriteString(
+		"// ------------- Welcome to Elle-Station ---------------" +
+			"\n// Paste your JSON below and save & exit the text editor" +
+			"\n// -----------------------------------------------------\n")
+	f.Close()
+}
+
 func main() {
 	fPath, err := filepath.Abs(".")
 	if err != nil {
@@ -126,17 +139,7 @@ func main() {
 		os.Exit(1)
 	}
 	fPath = fPath + "/temp.txt"
-
-	f, err := os.Create(fPath)
-	if err != nil {
-		fmt.Println("Error:", err)
-		os.Exit(1)
-	}
-	_, err = f.WriteString("// ------------- Welcome to Elle-Station ---------------" +
-		"\n// Paste your JSON below and save & exit the text editor" +
-		"\n// -----------------------------------------------------")
-	f.Close()
-
+	fileSetup(fPath)
 	defer os.Remove(fPath)
 
 	editor := flag.String("editor", "nano", "Set the editor that use is presented with to paste their JSON")
@@ -172,6 +175,4 @@ func main() {
 	}
 
 	fmt.Println(finalStruct)
-
-	// Ask user if they want it saved to a go file
 }
